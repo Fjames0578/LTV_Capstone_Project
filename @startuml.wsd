@@ -13,17 +13,28 @@ class RealEstateNFT {
     ' -- inheritance --
 	{abstract}ERC721Enumerable
 	{abstract}Ownable
+	{abstract}ReentrancyGuard
 
     ' -- usingFor --
 
     ' -- vars --
 	+[[mapping uint256=>Property ]] properties
+	-[[mapping string=>bool ]] propertyExists
 
     ' -- methods --
+	+**__constructor__**()
+	+🔍supportsInterface()
+	+💰mint()
+	#_beforeTokenTransfer()
+	+addProperty()
+	+🔍getProperty()
+	+transferProperty()
+	+burnProperty()
 
 }
 ' -- inheritance / usingFor --
 RealEstateNFT --[#DarkGoldenRod]|> ERC721Enumerable
 RealEstateNFT --[#DarkGoldenRod]|> Ownable
+RealEstateNFT --[#DarkGoldenRod]|> ReentrancyGuard
 
 @enduml
