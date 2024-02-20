@@ -22,22 +22,8 @@ contract RealEstateNFT is ERC721Enumerable, Ownable {
     }
 
     // Mint a token to the owner
-
-    function mint(
-        string memory name,
-        string memory leaseDetails
-    ) public onlyOwner {
-        addProperty(name, leaseDetails);
+    function mint() public payable {
         _mint(msg.sender, totalSupply() + 1);
-        emit PropertyAdded(totalSupply(), name, leaseDetails);
-        emit Transfer(address(0), msg.sender, totalSupply());
-        emit Approval(msg.sender, msg.sender, totalSupply());
-        emit ApprovalForAll(msg.sender, msg.sender, true);
-        emit Mint(msg.sender, totalSupply());
-        emit Burn(msg.sender, totalSupply());
-        emit TransferSingle(msg.sender, address(0), address(0), totalSupply());
-        emit TransferFrom(msg.sender, msg.sender, address(0), totalSupply());
-        emit URI(totalSupply(), "https://www.example.com");
     }
 
     function addProperty(
