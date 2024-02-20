@@ -3,29 +3,37 @@ pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract RealEstateNFT is ERC721Enumerable, Ownable {
+contract RealEstateNFT is ERC721Enumerable, Ownable, ReentrancyGuard {
     struct Property {
         string name;
-        address owner;
-        string leaseDetails; // Simplified for demonstration
+        string leaseDetails;
     }
 
     mapping(uint256 => Property) public properties;
+    mapping(string => bool) private propertyExists;
 
-    event PropertyAdded(uint256 tokenId, string name, string leaseDetails);
-    event PropertyTransferred(uint256 tokenId, address from, address to);
-    event PropertyBurned(uint256 tokenId);
+    event PropertyAdded(
+        uint256 indexed tokenId,
+        string name,
+        string leaseDetails
+    );
+    event PropertyTransferred(
+        uint256 indexed tokenId,
+        address indexed from,
+        address indexed to
+    );
+    event PropertyBurned(uint256 indexed tokenId);
 
-    constructor() ERC721("RealEstateNFT", "RENT") {
-        _mint(msg.sender, 1);
-    }
+    constructor() ERC721("RealEstateNFT", "RENT") {}
 
-    // Mint a token to the owner
-    function mint() public payable {
-        _mint(msg.sender, totalSupply() + 1);
-    }
+    // Removed the mint function to ensure properties are added with details and controlled by the owner
 
+    /**
+     * @dev Add a new property, minting a token and setting its details.
+     * Only callable by the contract owner.
+     */
     function addProperty(
         string memory name,
         string memory leaseDetails
@@ -35,14 +43,19 @@ contract RealEstateNFT is ERC721Enumerable, Ownable {
             bytes(leaseDetails).length > 0,
             "Lease details cannot be empty"
         );
+        require(!propertyExists[name], "Property already exists");
 
         uint256 tokenId = totalSupply() + 1;
-        properties[tokenId] = Property(name, msg.sender, leaseDetails);
+        properties[tokenId] = Property(name, leaseDetails);
+        propertyExists[name] = true;
         _mint(msg.sender, tokenId);
 
         emit PropertyAdded(tokenId, name, leaseDetails);
     }
 
+    /**
+     * @dev Retrieve property details by token ID.
+     */
     function getProperty(
         uint256 tokenId
     ) public view returns (Property memory) {
@@ -50,13 +63,14 @@ contract RealEstateNFT is ERC721Enumerable, Ownable {
         return properties[tokenId];
     }
 
-    event PropertyTransferred(
-        uint256 indexed tokenId,
-        address indexed from,
-        address indexed to
-    );
-
-    function transferProperty(uint256 tokenId, address newOwner) public {
+    /**
+     * @dev Transfer property to a new owner, updating the internal mapping.
+     * Can only be called by the current owner of the token.
+     */
+    function transferProperty(
+        uint256 tokenId,
+        address newOwner
+    ) public nonReentrant {
         require(ownerOf(tokenId) == msg.sender, "Only the owner can transfer.");
         require(
             newOwner != address(0),
@@ -64,18 +78,17 @@ contract RealEstateNFT is ERC721Enumerable, Ownable {
         );
 
         _transfer(msg.sender, newOwner, tokenId);
-        properties[tokenId].owner = newOwner;
-
         emit PropertyTransferred(tokenId, msg.sender, newOwner);
     }
 
-    event PropertyBurned(uint256 indexed tokenId);
-
-    function burnProperty(uint256 tokenId) public {
+    /**
+     * @dev Burn a property token, removing its details.
+     * Can only be called by the current owner of the token.
+     */
+    function burnProperty(uint256 tokenId) public nonReentrant {
         require(ownerOf(tokenId) == msg.sender, "Only the owner can burn.");
         _burn(tokenId);
-        delete properties[tokenId]; // This removes the property from the mapping.
-
+        delete properties[tokenId];
         emit PropertyBurned(tokenId);
     }
 }
